@@ -108,7 +108,6 @@ def llm_check(gold, pred, trace=None):
     return T_or_F == "T"
 
 def gsm8k_metric(gold, pred, trace=None):
-
     obviously_correct = int(parse_integer_answer(str(gold.answer),only_first_line=False)) == int(parse_integer_answer(str(pred.answer),only_first_line=False))
     correct = obviously_correct
     if not obviously_correct and (str(gold.answer) in str(pred.answer)):
