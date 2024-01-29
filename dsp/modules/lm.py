@@ -35,6 +35,7 @@ class LM(ABC):
         """Prints the last n prompts and their completions.
         TODO: print the valid choice that contains filled output field instead of the first
         """
+        print("Inspecting history...")
         provider: str = self.provider
 
         last_prompt = None
@@ -58,12 +59,12 @@ class LM(ABC):
 
             if len(printed) >= n:
                 break
-
+        output = []
         for idx, (prompt, choices) in enumerate(reversed(printed)):
             # skip the first `skip` prompts
             if (n - idx - 1) < skip:
                 continue
-
+            output.append(f"# Prompt \n {prompt} \n # Choices \n {choices} \n ----------------------------------------------------- \n")
             print("\n\n\n")
             print(prompt, end="")
             text = ""
@@ -78,6 +79,8 @@ class LM(ABC):
             if len(choices) > 1:
                 self.print_red(f" \t (and {len(choices)-1} other completions)", end="")
             print("\n\n\n")
+        return output
+        
 
     @abstractmethod
     def __call__(self, prompt, only_completed=True, return_sorted=False, **kwargs):

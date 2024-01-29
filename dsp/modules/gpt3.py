@@ -4,7 +4,6 @@ from typing import Any, Literal, Optional, cast
 
 import backoff
 import openai
-import openai.error
 from openai.openai_object import OpenAIObject
 
 from dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory, cache_turn_on
@@ -104,12 +103,6 @@ class GPT3(LM):
 
         return response
 
-    @backoff.on_exception(
-        backoff.expo,
-        (openai.error.RateLimitError, openai.error.ServiceUnavailableError, openai.error.APIError),
-        max_time=1000,
-        on_backoff=backoff_hdlr,
-    )
     def request(self, prompt: str, **kwargs) -> OpenAIObject:
         """Handles retreival of GPT-3 completions whilst handling rate limiting and caching."""
         if "model_type" in kwargs:
