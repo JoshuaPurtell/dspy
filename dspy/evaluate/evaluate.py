@@ -31,6 +31,7 @@ class Evaluate:
         self.max_errors = max_errors
         self.error_count = 0
         self.error_lock = threading.Lock()
+        self.dataset = None
 
     def _execute_single_thread(self, wrapped_program, devset, display_progress):
         ncorrect = 0
@@ -125,14 +126,15 @@ class Evaluate:
         data = [merge_dicts(example, prediction) | {'correct': score} for _, example, prediction, score in predicted_devset]
 
         df = pd.DataFrame(data)
-
+        self.dataset = copy.deepcopy(df)
+        
         # Truncate every cell in the DataFrame
         df = df.applymap(truncate_cell)
 
         # Rename the 'correct' column to the name of the metric function
         metric_name = metric.__name__
         df.rename(columns={'correct': metric_name}, inplace=True)
-
+        
         if display_table:
             if isinstance(display_table, int):
                 df_to_display = df.head(display_table).copy()

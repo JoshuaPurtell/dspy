@@ -3,6 +3,7 @@ import random
 
 from datasets import load_dataset
 from dspy.datasets.dataset import Dataset
+import openai
 
 class GSM8K:
     def __init__(self) -> None:
@@ -66,8 +67,8 @@ class GSM8K:
 
 def parse_integer_answer(answer, only_first_line=True):
     try:
-        if only_first_line:
-            answer = answer.strip().split('\n')[0]
+        #if only_first_line:
+            #answer = answer.strip().split('\n')[0]
 
         # find the last token that has a number in it
         answer = [token for token in answer.split() if any(c.isdigit() for c in token)][-1]
@@ -78,9 +79,37 @@ def parse_integer_answer(answer, only_first_line=True):
     except (ValueError, IndexError):
         # print(answer)
         answer = 0
-    
     return answer
 
 
+def llm_check(gold, pred, trace=None):
+    llm_answer = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages = [
+            {
+                "role": "system",
+                "content": "You will be given the correct answer to a math question and a student's answer. Please indicate whether the student's answer is correct or incorrect. Respond with T for correct and F for incorrect. No other response is valid."
+            },
+            {
+                "role": "user",
+                "content": f"""
+# Correct answer
+{gold} 
+
+# Student answer
+{pred}
+"""
+            }
+        ],
+        temperature=0.0,
+        max_tokens=10,
+        )
+    T_or_F = llm_answer.choices[0]['message']['content']
+    return T_or_F == "T"
+
 def gsm8k_metric(gold, pred, trace=None):
-    return int(parse_integer_answer(str(gold.answer))) == int(parse_integer_answer(str(pred.answer)))
+    obviously_correct = int(parse_integer_answer(str(gold.answer),only_first_line=False)) == int(parse_integer_answer(str(pred.answer),only_first_line=False))
+    correct = obviously_correct
+    if not obviously_correct and (str(gold.answer) in str(pred.answer)):
+        correct = llm_check(gold.answer, pred.answer, trace=trace)
+    return correct
